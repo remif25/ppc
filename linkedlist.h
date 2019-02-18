@@ -11,7 +11,7 @@
 #include <string>
 
 struct Node {
-    struct Node* before;
+    std::list<Node*> next;
     QString value;
     QString gamme;
     double weight;
@@ -23,16 +23,19 @@ class LinkedList
 {
 public:
     LinkedList();
-    LinkedList(QFile* file);
-    QString displayData(QFile *file);
+    void initData(QFile *file);
+    QString displayInitData();
+    QString createGraph();
+    int algo_rec(std::list<Node>* t_optimized,std::list<Node*> t_gamme, std::list<Node*> t_graph, int t_path);
+    static bool deleteAll( Node * theElement ) { delete theElement; return true; }
 
 private:
-    std::vector<Node*> m_listNodes;
-    std::list<Node> m_optimizedGraph;
+    std::vector<std::list<Node*>> m_listNodes;
+    std::list<Node*> m_optimizedGraph;
     int m_nbElements;
     int m_nbGammes;
     float m_defaultWeight;
-    std::list<Node> m_bestPath;
+    std::list<Node*> m_bestPath;
     std::vector<QString> m_listNodeValue;
     std::vector<QString> m_listGammes;
 
@@ -51,11 +54,11 @@ private:
     std::vector<QString> listGammes() const { return m_listGammes;}
     void listGammes(std::vector<QString> t_listGammes) {m_listGammes = std::move(t_listGammes);}
 
-    std::vector<Node*> listNodes() const { return m_listNodes; }
-    void listNodes(std::vector<Node*> t_listNodes) { m_listNodes = std::move(t_listNodes); }
+    std::vector<std::list<Node*>> listNodes() const { return m_listNodes; }
+    void listNodes(std::vector<std::list<Node*>> t_listNodes) { m_listNodes = std::move(t_listNodes); }
 
-    std::list<Node> optimizedGraph() const { return m_optimizedGraph; }
-    void optimizedGraph(std::list<Node> t_optimizedGraph) { m_optimizedGraph = std::move(t_optimizedGraph); }
+    std::list<Node*> optimizedGraph() const { return m_optimizedGraph; }
+    void optimizedGraph(std::list<Node*> t_optimizedGraph) { m_optimizedGraph = std::move(t_optimizedGraph); }
 
     int push_back_node(Node &node);
     int add_node(struct Node *node, struct Node *previous);

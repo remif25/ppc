@@ -72,6 +72,18 @@ MainWindow::MainWindow()
 
     setCurrentFile(QString());
     setUnifiedTitleAndToolBarOnMac(true);
+
+    QFile file("D:/Qt-workspace/application/test_ppc.csv");
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Application"),
+                             tr("Cannot read file %1:\n%2.")
+                             .arg(QDir::toNativeSeparators("D:/Qt-workspace/application/test_ppc.csv"), file.errorString()));
+        return;
+    }
+    LinkedList *ll = new LinkedList();
+    ll->initData(&file);
+    textEdit->setPlainText(ll->displayInitData());
+    textEdit->setPlainText(ll->createGraph());
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -299,6 +311,7 @@ bool MainWindow::maybeSave()
 void MainWindow::loadFile(const QString &fileName)
 {
     QFile file(fileName);
+    LinkedList *ll = new LinkedList;
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
                              tr("Cannot read file %1:\n%2.")
@@ -306,13 +319,12 @@ void MainWindow::loadFile(const QString &fileName)
         return;
     }
 
-    QTextStream in(&file);
-    LinkedList ll;
+    ll->initData(&file);
 
 #ifndef QT_NO_CURSOR
     QApplication::setOverrideCursor(Qt::WaitCursor);
 #endif
-    textEdit->setPlainText(ll.displayData(&file));
+    textEdit->setPlainText(ll->displayInitData());
 #ifndef QT_NO_CURSOR
     QApplication::restoreOverrideCursor();
 #endif
