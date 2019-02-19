@@ -28,6 +28,7 @@ public:
     QString createGraph();
     int algo_rec(std::list<Node>* t_optimized,std::list<Node*> t_gamme, std::list<Node*> t_graph, int t_path);
     static bool deleteAll( Node * theElement ) { delete theElement; return true; }
+    void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);
 
 private:
     std::vector<std::list<Node*>> m_listNodes;

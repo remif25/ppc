@@ -177,15 +177,7 @@ QString LinkedList::createGraph() {
         for (auto &tempOptimized : listBestPathByOp) {
             if (bestPath == tempOptimized.size())
                 for (auto &tempNode : tempOptimized) {
-                    if (optimizedGraph().size() > 0)
-                        optimizedGraph().push_back(&tempNode);
 
-                    for (auto &tempNode2 : optimizedGraph()) {
-                        if (tempNode.value == tempNode2->value) {
-
-                        }
-
-                    }
                 }
 
         }
@@ -193,6 +185,53 @@ QString LinkedList::createGraph() {
     }
 
     return result;
+}
+
+
+GRAVE ERREUR : Je push les éléments dans mon Graph. Ce qui est faut, les seuls éléments que je dois ajouter sont
+               les heads (les éléments qui ne sont dans aucun next) et les queues (ceux dont les next sont vides)
+
+
+/*
+ *
+ * Fonction permettant la mise du Graph optimisé à partir des graphs les plus optimisés trouvés pour une gammes avec algo_rec
+ * Cette fonction à pour but d'ajouter les noeuds "Node*" n'existant pas dans le Graph optimisé "optimizedGraph" et d'incrémenter
+ * le poids des noeuds sur lesquels ont passe plus de fois
+ *
+ * Cette fonction prend pour paramètre :
+ *  - std::list<Node*>::iterator *it_OptimizedGraph : Un itérateur sur le Graph optimisé "optimizedGraph" passé en tant que pointeur à la fonction (pour modifier en directe le Graph)
+ *  - std::list<Node*>::iterator* t_it_tempPath : Un itérateur sur le meilleure graph optimisé obtenue à l'aide de l'algo_rec passé aussi en tant que pointeur, ce n'est pas une oblogation mais ça permet d'avoir la même structure
+ *  - double t_weight : La valeur du poids à incrémenter en fonction du nombre de gamme traités et du nombre du nombre de meilleure graph trouvé par algo_rec
+ *
+ * */
+void LinkedList::incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight) {
+    bool checkNext;
+    Node* optimizedNode = **it_OptimizedGraph;
+    Node* actualNode = **t_it_tempPath;
+    if (optimizedNode->value == actualNode->value) {
+        for (auto &tempNode : actualNode->next) {
+            checkNext = false;
+            for (auto &tempGraph : optimizedNode->next) {
+                if (tempNode->value == tempGraph->value) {
+                    checkNext = true;
+                    optimizedNode->weight += t_weight;
+                    this->incrementPath(it_OptimizedGraph++, t_it_tempPath, t_weight);
+                    return;
+                }
+            }
+            if (!checkNext) {
+                optimizedNode->next.push_back(actualNode->next.back());
+                for (auto &tempGraph : optimizedNode->next) {
+                    this->incrementPath(optimizedNode->next, t_it_tempPath, t_weight);
+                }
+                return;
+            }
+        }
+    } else {
+        optimizedGraph().insert(*it_OptimizedGraph, actualNode);
+        this->incrementPath(it_OptimizedGraph, t_it_tempPath++, t_weight);
+        return;
+    }
 }
 
 int LinkedList::algo_rec(std::list<Node>* t_optimzed, std::list<Node*> t_gamme, std::list<Node*> t_graph, int t_path) {
@@ -204,18 +243,18 @@ int LinkedList::algo_rec(std::list<Node>* t_optimzed, std::list<Node*> t_gamme, 
         for (auto &opGraph : t_graph) {
             if(op->value == opGraph->value) {
                 t_path++;
-//                std::list<Node*> delete1, delete2;
+                //                std::list<Node*> delete1, delete2;
 
                 if(opGraph->next.size() > 0)
                     graphPath = algo_rec(t_optimzed, opGraph->next, op->next, t_path);
-//                    graphPath = algo_rec(&delete1, opGraph->next, op->next, t_path);
+                //                    graphPath = algo_rec(&delete1, opGraph->next, op->next, t_path);
 
                 if(op->next.size() > 0)
                     gammePath = algo_rec(t_optimzed, op->next, opGraph->next, t_path);
-//                    gammePath = algo_rec(&delete2, op->next, opGraph->next, t_path);
+                //                    gammePath = algo_rec(&delete2, op->next, opGraph->next, t_path);
 
-//                delete1 . remove_if ( deleteAll );
-//                delete2 . remove_if ( deleteAll );
+                //                delete1 . remove_if ( deleteAll );
+                //                delete2 . remove_if ( deleteAll );
 
                 if(op->next.size() > 0 && opGraph->next.size() > 0)
                     return (gammePath <= graphPath) ? algo_rec(t_optimzed, op->next, opGraph->next, t_path) : algo_rec(t_optimzed, opGraph->next, op->next, t_path);
