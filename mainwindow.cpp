@@ -83,7 +83,7 @@ MainWindow::MainWindow()
     LinkedList *ll = new LinkedList();
     ll->initData(&file);
     textEdit->setPlainText(ll->displayInitData());
-    textEdit->setPlainText(ll->createGraph());
+    //textEdit->setPlainText(ll->createGraph());
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

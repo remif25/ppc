@@ -19,6 +19,12 @@ struct Node {
     std::vector<QString> gammes;
 };
 
+template <typename Iter>
+Iter nextIter(Iter iter)
+{
+    return ++iter;
+}
+
 class LinkedList
 {
 public:
@@ -31,8 +37,8 @@ public:
     void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);
 
 private:
-    std::vector<std::list<Node*>> m_listNodes;
-    std::list<Node*> m_optimizedGraph;
+    std::vector<Node*> m_NodesHead;
+    std::list<Node*> m_optimizedGraph_head;
     int m_nbElements;
     int m_nbGammes;
     float m_defaultWeight;
@@ -55,11 +61,11 @@ private:
     std::vector<QString> listGammes() const { return m_listGammes;}
     void listGammes(std::vector<QString> t_listGammes) {m_listGammes = std::move(t_listGammes);}
 
-    std::vector<std::list<Node*>> listNodes() const { return m_listNodes; }
-    void listNodes(std::vector<std::list<Node*>> t_listNodes) { m_listNodes = std::move(t_listNodes); }
+    std::vector<Node*> NodesHeads() const { return m_NodesHead; }
+    void NodesHeads(std::vector<Node*> t_NodesHead) { m_NodesHead = std::move(t_NodesHead); }
 
-    std::list<Node*> optimizedGraph() const { return m_optimizedGraph; }
-    void optimizedGraph(std::list<Node*> t_optimizedGraph) { m_optimizedGraph = std::move(t_optimizedGraph); }
+    std::list<Node*> optimizedGraphH() const { return m_optimizedGraph_head; }
+    void optimizedGraphH(std::list<Node*> t_optimizedGraph) { m_optimizedGraph_head = std::move(t_optimizedGraph); }
 
     int push_back_node(Node &node);
     int add_node(struct Node *node, struct Node *previous);

@@ -12,6 +12,7 @@ void LinkedList::initData(QFile *file) {
     QString result;
     QString gamme;
     std::list<Node*> gammeActuel;
+    Node* before = new Node(); // Permet d'enregistrer pendant une itération le node précédent pour l'intéroger
 
     while (!in.atEnd()) {
         QString line = in.readLine();
@@ -28,11 +29,6 @@ void LinkedList::initData(QFile *file) {
             node->gammes.push_back(list.first());
             node->gamme = list.first();
 
-            if (m_listGammes.size() < 1) { // On ajoute un premier élément si les liste sont vides
-                m_listGammes.push_back(list.first());
-                m_listNodeValue.push_back(list[1] + list[2]);
-            }
-
             for (auto &node : m_listNodeValue) { //On vérifie si la combinaison PDT + CLé existe déjà (Elimination des doublons)
                 if(node == (list[1] + list[2]))
                     nodeValueAlreadyExist = true;
@@ -48,50 +44,71 @@ void LinkedList::initData(QFile *file) {
                 }
             }
 
+            if (m_listGammes.size() < 1) { // On ajoute un premier élément si les liste sont vides
+                m_listGammes.push_back(list.first());
+                m_listNodeValue.push_back(list[1] + list[2]);
+                gammeAlreadyExist = false;
+            }
+
+            if (gammeActuel.size() > 0) { // On fait pointer "next" vers le node qui le succède (1er chainage du graph)
+                if (gammeActuel.back()->gamme == node->gamme)
+                    gammeActuel.back()->next.push_back(node);
+                else {
+                    gammeActuel.back()->next.push_back(new Node());
+                }
+            }
+
             if(!gammeAlreadyExist) {// Si elle n'existe pas déjà on l'ajoute à la liste
                 m_listGammes.push_back(list.first());
-                std::vector<std::list<Node*>> a_listNodes = listNodes();
-                a_listNodes.push_back(gammeActuel);
-                listNodes(a_listNodes);
+                if (before->next.empty() || before->next.back()->value.isEmpty()) { // Si le next du node précédent est vide, alors on ajoute le node actuel à la liste des Node de tête
+                    std::vector<Node*> tempNodeHeads = NodesHeads();
+                    tempNodeHeads.push_back(node);
+                    NodesHeads(tempNodeHeads);
+                }
+
                 gammeActuel.clear();
             }
 
-
-            if (gammeActuel.size() > 0) { // On fait pointer "before" vers le node qui le succède (1er chainage du graph)
-                if (gammeActuel.back()->gamme == node->gamme)
-                    gammeActuel.back()->next.push_back(node);
-            }
-
             gammeActuel.push_back(node);
+            before = node;
         }
         m_nbElements++;
     }
-    std::vector<std::list<Node*>> a_listNodes = listNodes();
-    a_listNodes.push_back(gammeActuel);
-    listNodes(a_listNodes);
     gammeActuel.clear();
 }
 
 QString LinkedList::displayInitData() {
     QString result;
+    std::list<Node*> tempList;
 
-    result += "ListNodes size : " + QString::number(listNodes().size()) + "\n";
-    for(auto &array : listNodes()) {
-        result += "array : " + QString::number(array.size()) + "\n";
-        for (auto &node : array) {
-            if (!node->next.empty()) {
-                for (auto &nextNode : node->next) {
-                    if (!nextNode->gammes.empty()){
+    result += "ListNodes size : " + QString::number(NodesHeads().size()) + "\n";
+    for(auto heaNode : NodesHeads()) {
+        if (tempList.size() > 0)
+            tempList.pop_back();
 
+        tempList.push_back(heaNode);
+        //        result += "array : " + QString::number(array.size()) + "\n"
+        while (tempList.back()->value != "") {
+            if (tempList.back()->next.size() < 1)
+                tempList.back()->value = "";
+            for (auto node : tempList) {
+                for (std::list<Node*>::iterator it = node->next.begin(); it != node->next.end(); ++it) {
+                    if (!(*it)->gamme.isEmpty()){
                         result += QString("value : ") + node->value.toUtf8().constData()
                                 + QString(" / gamme : ") + node->gammes.back().toUtf8().constData()
-                                + QString(" // next->value : ") + nextNode->value.toUtf8().constData()
-                                + QString(" next->gamme : ")  + nextNode->gammes.front().toUtf8().constData() + QString("\n");
+                                + QString(" // next->value : ") + (*it)->value.toUtf8().constData()
+                                + QString(" next->gamme : ")  +(*it)->gammes.front().toUtf8().constData() + QString("\n");
 
                     } else {
                         result += QString("value : ") + node->value.toUtf8().constData()
                                 + QString(" / gamme : ") + node->gammes.back().toUtf8().constData() + QString("\n");
                     }
+
+                    if ((it != node->next.end()) && (nextIter(it) == node->next.end()))
+                    {
+                        tempList = node->next;
+                    }
+
                 }
             }
         }
@@ -103,108 +120,110 @@ QString LinkedList::displayInitData() {
     return result;
 }
 
-QString LinkedList::createGraph() {
+//QString LinkedList::createGraph() {
 
-    QString result= "";
-    int i = 0;
-    float weight = 1/listNodes().size();
-    float tempWeight;
-    std::vector<std::list<Node>> listBestPathByOp; // les meilleures chemin de chaque gammes trouvé à partir de chaque opération
-    std::vector<std::list<Node*>> listBestPath; // les meilleures chemin de chaque gammes
+//    QString result= "";
+//    int i = 0;
+//    float weight = 1/listNodes().size();
+//    float tempWeight;
+//    std::vector<std::list<Node>> listBestPathByOp; // les meilleures chemin de chaque gammes trouvé à partir de chaque opération
+//    std::vector<std::list<Node*>> listBestPath; // les meilleures chemin de chaque gammes
 
-    std::list<Node*> tempGragh1; //Premier Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins
-    std::list<Node*> tempGragh2; //Deuxième Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins (peut-être possible de ne pas l'utiliser)
+//    std::list<Node*> tempGragh1; //Premier Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins
+//    std::list<Node*> tempGragh2; //Deuxième Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins (peut-être possible de ne pas l'utiliser)
 
-    std::list<Node*> tempGamme;
+//    std::list<Node*> tempGamme;
 
-    unsigned int bestPath; // longueur du chemin meilleur la gamme
-    std::vector<int> bestPathByOp; // Taille des meilleurs chemin par opération
-    unsigned int tempPath; // Chemin temporaire pour manipulation des données
-    unsigned int tempPath2;
+//    unsigned int bestPath; // longueur du chemin meilleur la gamme
+//    std::vector<int> bestPathByOp; // Taille des meilleurs chemin par opération
+//    unsigned int tempPath; // Chemin temporaire pour manipulation des données
+//    unsigned int tempPath2;
 
-    for (auto &gamme : listNodes()) {
-        std::list<Node*> Gamme(gamme.begin(), gamme.end());
-        bestPath = std::numeric_limits<int>::max(); // Reset bestPath
-        tempPath = 0;
-        tempWeight = weight/gamme.size();
+//    for (auto &gamme : listNodes()) {
+//        std::list<Node*> Gamme(gamme.begin(), gamme.end());
+//        bestPath = std::numeric_limits<int>::max(); // Reset bestPath
+//        tempPath = 0;
+//        tempWeight = weight/gamme.size();
 
-        //Reset & Initialize listBestPathByOp
-        listBestPathByOp.clear();
-        Node emptyNode;
-        std::list<Node> emptyList;
-        emptyList.push_back(emptyNode);
-        listBestPathByOp.push_back(emptyList);
+//        //Reset & Initialize listBestPathByOp
+//        listBestPathByOp.clear();
+//        Node emptyNode;
+//        std::list<Node> emptyList;
+//        emptyList.push_back(emptyNode);
+//        listBestPathByOp.push_back(emptyList);
 
-        tempGragh1 = optimizedGraph(); // Copy du graph Optimisé dans la graph Temporaire;
-        bestPathByOp.clear(); // Reset
+//        tempGragh1 = optimizedGraph(); // Copy du graph Optimisé dans la graph Temporaire;
+//        bestPathByOp.clear(); // Reset
 
-        for (auto &op : gamme) {
-            if (tempGragh1.empty())
-                tempGragh1.push_back(op);
+//        for (auto &op : gamme) {
+//            if (tempGragh1.empty())
+//                tempGragh1.push_back(op);
 
-            tempGamme.push_back(op);
+//            tempGamme.push_back(op);
 
-            tempPath2 = tempPath;
+//            tempPath2 = tempPath;
 
-            result += QString::number(i) + "/ Create graph - OP : valeur : " + op->value.toUtf8().constData() + " | gamme : " + op->gammes.back().toUtf8().constData() + QString("\n");
-            result += QString::number(i) + "/ algo_rec(&listBestPathByOp.back(), tempGamme(" + tempGamme.back()->value.toUtf8() + ", " + tempGamme.back()->gammes.back().toUtf8() +
-                    "), tempGraph(" + tempGragh1.back()->value.toUtf8() + ", " + tempGragh1.back()->gammes.back().toUtf8()  + QString("\n");
+//            result += QString::number(i) + "/ Create graph - OP : valeur : " + op->value.toUtf8().constData() + " | gamme : " + op->gammes.back().toUtf8().constData() + QString("\n");
+//            result += QString::number(i) + "/ algo_rec(&listBestPathByOp.back(), tempGamme(" + tempGamme.back()->value.toUtf8() + ", " + tempGamme.back()->gammes.back().toUtf8() +
+//                    "), tempGraph(" + tempGragh1.back()->value.toUtf8() + ", " + tempGragh1.back()->gammes.back().toUtf8()  + QString("\n");
 
-            tempPath = algo_rec(&listBestPathByOp.back(), tempGamme, tempGragh1, tempPath);
+//            tempPath = algo_rec(&listBestPathByOp.back(), tempGamme, tempGragh1, tempPath);
 
-            if(gamme.size() == tempPath) {
-                listBestPathByOp.pop_back();
-                for (auto &tempOP : gamme) {
-                    std::list<Node> opList;
-                    opList.push_back(*tempOP);
-                    listBestPathByOp.push_back(opList);
-                }
-            }
+//            if(gamme.size() == tempPath) {
+//                listBestPathByOp.pop_back();
+//                for (auto &tempOP : gamme) {
+//                    std::list<Node> opList;
+//                    opList.push_back(*tempOP);
+//                    listBestPathByOp.push_back(opList);
+//                }
+//            }
 
-            result += QString::number(i) + "/ taille du chemin : " + QString::number(tempPath);
-            if (tempPath < bestPath) {
-                bestPath = tempPath;
-            }
-            tempGamme.pop_back();
-            tempPath = tempPath2;
-            tempPath++;
-        }
+//            result += QString::number(i) + "/ taille du chemin : " + QString::number(tempPath);
+//            if (tempPath < bestPath) {
+//                bestPath = tempPath;
+//            }
+//            tempGamme.pop_back();
+//            tempPath = tempPath2;
+//            tempPath++;
+//        }
 
-        // Initialiser arbitrairement l'optimizedGraph avec la première gamme. Car nécessairement cette gamme réprésentera un des chemins du Graph.
-        // Faire fonction récursives pour parcourir tous les élements de tous les meilleures chemins trouvés en incrément temps le chemin à chaque fois si les "next" correspondent
-        // et sinon ajouter l'élément n'existant pas .
+//        // Initialiser arbitrairement l'optimizedGraph avec la première gamme. Car nécessairement cette gamme réprésentera un des chemins du Graph.
+//        // Faire fonction récursives pour parcourir tous les élements de tous les meilleures chemins trouvés en incrément temps le chemin à chaque fois si les "next" correspondent
+//        // et sinon ajouter l'élément n'existant pas .
 
-        for (auto &tempOptimized : listBestPathByOp) {
-            if (bestPath == tempOptimized.size())
-                for (auto &tempNode : tempOptimized) {
+//        for (auto &tempOptimized : listBestPathByOp) {
+//            if (bestPath == tempOptimized.size())
+//                for (auto &tempNode : tempOptimized) {
 
-                }
+//                }
 
-        }
+//        }
 
-    }
+//    }
 
-    return result;
-}
+//    return result;
+//}
 
 
-GRAVE ERREUR : Je push les éléments dans mon Graph. Ce qui est faut, les seuls éléments que je dois ajouter sont
-               les heads (les éléments qui ne sont dans aucun next) et les queues (ceux dont les next sont vides)
-
+/*GRAVE ERREUR : Je push les éléments dans mon Graph. Ce qui est faut, les seuls éléments que je dois ajouter sont
+ *              les heads (les éléments qui ne sont dans aucun next) et les queues (ceux dont les next sont vides)
+ *
+ *
+ */
 
 /*
- *
- * Fonction permettant la mise du Graph optimisé à partir des graphs les plus optimisés trouvés pour une gammes avec algo_rec
- * Cette fonction à pour but d'ajouter les noeuds "Node*" n'existant pas dans le Graph optimisé "optimizedGraph" et d'incrémenter
- * le poids des noeuds sur lesquels ont passe plus de fois
- *
- * Cette fonction prend pour paramètre :
- *  - std::list<Node*>::iterator *it_OptimizedGraph : Un itérateur sur le Graph optimisé "optimizedGraph" passé en tant que pointeur à la fonction (pour modifier en directe le Graph)
- *  - std::list<Node*>::iterator* t_it_tempPath : Un itérateur sur le meilleure graph optimisé obtenue à l'aide de l'algo_rec passé aussi en tant que pointeur, ce n'est pas une oblogation mais ça permet d'avoir la même structure
- *  - double t_weight : La valeur du poids à incrémenter en fonction du nombre de gamme traités et du nombre du nombre de meilleure graph trouvé par algo_rec
- *
- * */
-void LinkedList::incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight) {
+   *
+   * Fonction permettant la mise du Graph optimisé à partir des graphs les plus optimisés trouvés pour une gammes avec algo_rec
+   * Cette fonction à pour but d'ajouter les noeuds "Node*" n'existant pas dans le Graph optimisé "optimizedGraph" et d'incrémenter
+   * le poids des noeuds sur lesquels ont passe plus de fois
+   *
+   * Cette fonction prend pour paramètre :
+   *  - std::list<Node*>::iterator *it_OptimizedGraph : Un itérateur sur le Graph optimisé "optimizedGraph" passé en tant que pointeur à la fonction (pour modifier en directe le Graph)
+   *  - std::list<Node*>::iterator* t_it_tempPath : Un itérateur sur le meilleure graph optimisé obtenue à l'aide de l'algo_rec passé aussi en tant que pointeur, ce n'est pas une oblogation mais ça permet d'avoir la même structure
+   *  - double t_weight : La valeur du poids à incrémenter en fonction du nombre de gamme traités et du nombre du nombre de meilleure graph trouvé par algo_rec
+   *
+   * */
+/* void LinkedList::incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight) {
     bool checkNext;
     Node* optimizedNode = **it_OptimizedGraph;
     Node* actualNode = **t_it_tempPath;
@@ -276,7 +295,7 @@ int LinkedList::algo_rec(std::list<Node>* t_optimzed, std::list<Node*> t_gamme, 
     }
 
     return t_path;
-}
+}*/
 
 
 
