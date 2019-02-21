@@ -32,12 +32,13 @@ public:
     void initData(QFile *file);
     QString displayInitData();
     QString createGraph();
-    int algo_rec(std::list<Node>* t_optimized,std::list<Node*> t_gamme, std::list<Node*> t_graph, int t_path);
+    int algo_rec(std::list<Node>::iterator* it,Node* t_nodeGamme, Node* t_nodeGraph, int t_path);
     static bool deleteAll( Node * theElement ) { delete theElement; return true; }
     void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);
 
 private:
-    std::vector<Node*> m_NodesHead;
+    std::vector<Node*> m_NodesHeads;
+    std::vector<int> m_sizeGammes;
     std::list<Node*> m_optimizedGraph_head;
     int m_nbElements;
     int m_nbGammes;
@@ -61,8 +62,8 @@ private:
     std::vector<QString> listGammes() const { return m_listGammes;}
     void listGammes(std::vector<QString> t_listGammes) {m_listGammes = std::move(t_listGammes);}
 
-    std::vector<Node*> NodesHeads() const { return m_NodesHead; }
-    void NodesHeads(std::vector<Node*> t_NodesHead) { m_NodesHead = std::move(t_NodesHead); }
+    std::vector<Node*> NodesHeads() const { return m_NodesHeads; }
+    void NodesHeads(std::vector<Node*> t_NodesHeads) { m_NodesHeads = std::move(t_NodesHeads); }
 
     std::list<Node*> optimizedGraphH() const { return m_optimizedGraph_head; }
     void optimizedGraphH(std::list<Node*> t_optimizedGraph) { m_optimizedGraph_head = std::move(t_optimizedGraph); }
