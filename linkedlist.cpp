@@ -8,6 +8,7 @@ LinkedList::LinkedList()
 }
 
 void LinkedList::initData(QFile *file) {
+    int sizeGamme = 0;
     QTextStream in(file);
     QString result;
     QString gamme;
@@ -19,6 +20,7 @@ void LinkedList::initData(QFile *file) {
         QStringList list = line.split(';');
         bool nodeValueAlreadyExist = false;
         bool gammeAlreadyExist = false;
+        sizeGamme++;
 
 
         // On vérifie de manière arbitraire si on a au mojns 3 éléments dans la liste (1er : Gamme - 2ème : PDT - 3ème : Clé de réf)
@@ -28,6 +30,8 @@ void LinkedList::initData(QFile *file) {
             node->value = list[1] + list[2];
             node->gammes.push_back(list.first());
             node->gamme = list.first();
+
+            sizeGammes().back() = sizeGamme; // Incrémentation de la liste de la taille des gammes pour calculer le poids.
 
             for (auto &node : m_listNodeValue) { //On vérifie si la combinaison PDT + CLé existe déjà (Elimination des doublons)
                 if(node == (list[1] + list[2]))
@@ -64,6 +68,7 @@ void LinkedList::initData(QFile *file) {
                     std::vector<Node*> tempNodeHeads = NodesHeads();
                     tempNodeHeads.push_back(node);
                     NodesHeads(tempNodeHeads);
+                    sizeGammes().push_back(0);
                 }
 
                 gammeActuel.clear();
@@ -73,6 +78,7 @@ void LinkedList::initData(QFile *file) {
             before = node;
         }
         m_nbElements++;
+
     }
     gammeActuel.clear();
 }
@@ -122,117 +128,100 @@ QString LinkedList::displayInitData() {
 
 QString LinkedList::createGraph() {
 
+    std::vector<int>::iterator it_sizeGammes = sizeGammes().begin(); // Itérateur pour récupérer la taille des gammes
+    std::vector<int>::const_iterator it_bestPath;
     QString result= "";
     int i = 0;
-    float weight = 1/NodesHeads().size();
+    float weight = 1/NodesHeads().size(); //Poids moyen de chaque gamme
     float tempWeight;
-    std::vector<std::list<Node>> listBestPathByOp; // les meilleures chemin de chaque gammes trouvé à partir de chaque opération
-    std::vector<std::list<Node*>> listBestPath; // les meilleures chemin de chaque gammes
-
-    std::list<Node*> tempGragh1; //Premier Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins
-    std::list<Node*> tempGragh2; //Deuxième Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins (peut-être possible de ne pas l'utiliser)
-
+    std::vector<Node*> listBestPath; // les meilleures chemin de chaque gammes
+    std::list<Node*> tempGragh; //Premier Graph temporaire pour stocker temporairement les données lors des recherches des meilleures chemins
     std::list<Node*> tempGamme;
-
     unsigned int bestPath; // longueur du chemin meilleur la gamme
+    int path;
+    int tempPath;
+    bool checkNode; //Vérifie si le noeud du graph optimisé de la gamme existe dans le Graph optimisé. S'il n'existe pas, on ajoute ce Node comme NodeHead du Graph
     std::vector<int> bestPathByOp; // Taille des meilleurs chemin par opération
-    unsigned int tempPath; // Chemin temporaire pour manipulation des données
-    unsigned int tempPath2;
 
-    for (auto &gamme : listNodes()) {
-        std::list<Node*> Gamme(gamme.begin(), gamme.end());
+    optimizedGraphH().push_back(NodesHeads().front()); // On met arbitrairement un premier élément dans le Graph
+
+    for (auto &gamme : NodesHeads()) {
         bestPath = std::numeric_limits<int>::max(); // Reset bestPath
-        tempPath = 0;
-        tempWeight = weight/gamme.size();
+        tempWeight = weight/ static_cast< float > (*it_sizeGammes); // Poids de chaque opération de chaque gamme
 
         //Reset & Initialize listBestPathByOp
-        listBestPathByOp.clear();
         Node emptyNode;
         std::list<Node> emptyList;
-        emptyList.push_back(emptyNode);
-        listBestPathByOp.push_back(emptyList);
 
-        tempGragh1 = optimizedGraph(); // Copy du graph Optimisé dans la graph Temporaire;
         bestPathByOp.clear(); // Reset
 
-        for (auto &op : gamme) {
-            if (tempGragh1.empty())
-                tempGragh1.push_back(op);
+        for (auto nodeHead : optimizedGraphH()) {
+            path = 0;
+            while (!gamme->next.empty()) {
 
-            tempGamme.push_back(op);
+                tempPath = algo_rec(gamme, nodeHead, path, 0, true);
+                bestPathByOp.push_back(tempPath);
+                path++;
+                gamme =  gamme->next.back();
 
-            tempPath2 = tempPath;
-
-            result += QString::number(i) + "/ Create graph - OP : valeur : " + op->value.toUtf8().constData() + " | gamme : " + op->gammes.back().toUtf8().constData() + QString("\n");
-            result += QString::number(i) + "/ algo_rec(&listBestPathByOp.back(), tempGamme(" + tempGamme.back()->value.toUtf8() + ", " + tempGamme.back()->gammes.back().toUtf8() +
-                    "), tempGraph(" + tempGragh1.back()->value.toUtf8() + ", " + tempGragh1.back()->gammes.back().toUtf8()  + QString("\n");
-
-            tempPath = algo_rec(&listBestPathByOp.back(), tempGamme, tempGragh1, tempPath);
-
-            if(gamme.size() == tempPath) {
-                listBestPathByOp.pop_back();
-                for (auto &tempOP : gamme) {
-                    std::list<Node> opList;
-                    opList.push_back(*tempOP);
-                    listBestPathByOp.push_back(opList);
-                }
+                if (tempPath > 0 && tempPath <= bestPath)
+                    bestPath = tempPath;
             }
-
-            result += QString::number(i) + "/ taille du chemin : " + QString::number(tempPath);
-            if (tempPath < bestPath) {
-                bestPath = tempPath;
-            }
-            tempGamme.pop_back();
-            tempPath = tempPath2;
-            tempPath++;
         }
+        it_bestPath = bestPathByOp.begin();
 
-        // Initialiser arbitrairement l'optimizedGraph avec la première gamme. Car nécessairement cette gamme réprésentera un des chemins du Graph.
-        // Faire fonction récursives pour parcourir tous les élements de tous les meilleures chemins trouvés en incrément temps le chemin à chaque fois si les "next" correspondent
-        // et sinon ajouter l'élément n'existant pas .
-
-        for (auto &tempOptimized : listBestPathByOp) {
-            if (bestPath == tempOptimized.size())
-                for (auto &tempNode : tempOptimized) {
-
+        while(it_bestPath != bestPathByOp.end()) {
+            for (auto nodeHeadGamme : optimizedGraphHbyG()) {
+                if (*it_bestPath <= bestPath && *it_bestPath > 0) {
+                    tempGamme = listedGamme(nodeHeadGamme);
+                    for (auto nodeGamme : tempGamme) {
+                        for  // Pour chaque NodeHead (for)
+                              // Pour tout next existant de chaque Nodehead (while)
+                                // Mettre un testeur pour la cas ou on a déjà incrémenté le node, ne pas l'incrémenté une n-ième fois si on retombe dessus
+                    }
                 }
 
+                it_bestPath++;
+            }
         }
-
     }
 
     return result;
 }
 
-int LinkedList::algo_rec(std::list<Node>::iterator* it,Node* t_nodeGamme, Node* t_nodeGraph, int t_path) {
+int LinkedList::algo_rec(Node* t_nodeGamme, Node* t_nodeGraph, int t_path,  int t_check, bool t_test) {
     int tempPath1;
     int tempPath2;
 
-    while ((*it)->next.empty()) {
+    for (auto nextNodeGraph : t_nodeGraph->next) {
+        t_path++;
 
-        for (auto nextNodeGraph : t_nodeGraph->next) {
-            t_path++;
+        if (t_nodeGamme->value == t_nodeGraph->value) {
+            for (auto nextNodeGamme : t_nodeGamme->next) {
+                if (nextNodeGamme->value ==  nextNodeGraph->value) {
+                    if (t_test) {
+                        if (!optimizedGraphHbyG().empty())
+                            optimizedGraphHbyG().back()->next.push_back(t_nodeGraph);
+                     }
+                    return algo_rec(nextNodeGamme, nextNodeGraph, t_path, 1, true);
+                } else {
+                    tempPath1 = algo_rec(t_nodeGamme, nextNodeGraph, t_path, t_check, false);
+                    tempPath2 = algo_rec( nextNodeGamme, t_nodeGraph, t_path, t_check, false);
 
-            if (t_nodeGamme->value == t_nodeGraph->value) {
-                for (auto nextNodeGamme : t_nodeGamme->next) {
-                    if (nextNodeGamme->value ==  nextNodeGraph->value) {
-                        return algo_rec(it, nextNodeGamme, nextNodeGraph, t_path);
-                    } else {
-                        tempPath1 = algo_rec(it, t_nodeGamme, nextNodeGraph, t_path);
-                        tempPath2 = algo_rec(it, nextNodeGamme, t_nodeGraph, t_path);
-
-                        return (tempPath1 <= tempPath2) ? algo_rec(it, t_nodeGamme, nextNodeGraph, t_path) : algo_rec(it, nextNodeGamme, t_nodeGraph, t_path);
-                    }
-
+                    return (tempPath1 <= tempPath2) ? algo_rec(t_nodeGamme, nextNodeGraph, t_path, t_check, true) : algo_rec(nextNodeGamme, t_nodeGraph, t_path,  t_check, true);
                 }
-                return t_path;
-            } else {
-                return algo_rec(it, t_nodeGamme, nextNodeGraph, t_path);
+
             }
+            return t_path;
+        } else {
+            if (t_test) {
+                if (!optimizedGraphHbyG().empty())
+                    optimizedGraphHbyG().back()->next.push_back(t_nodeGraph);
+                 }
+            return algo_rec(t_nodeGamme, nextNodeGraph, t_path,  t_check, t_test);
         }
-        ++it;
     }
-    return t_path;
+    return t_path * t_check;
 }
 
 
@@ -343,3 +332,33 @@ void LinkedList::add_gammes(int t_nbGammes)
 {
     nbGammes(t_nbGammes + nbGammes());
 }
+
+Node* LinkedList::getLast(Node * t_node) {
+
+}
+
+Node* LinkedList::copieWithoutNext(Node *t_node) {
+    Node* node = new Node();
+    node->gamme = t_node->gamme;
+    node->value = t_node->value;
+    node->weight = t_node->weight;
+    node->branchs = t_node->branchs;
+
+    return node;
+}
+
+std::list<Node*> LinkedList::listedGamme(Node *t_nodeHead) {
+    std::list<Node*> list_node;
+
+    if (!t_nodeHead->next.empty())
+        list_node =  listedGamme(t_nodeHead->next.back());
+
+     list_node.push_back(copieWithoutNext(t_nodeHead));
+
+     return list_node;
+
+}
+
+//void LinkedList::runthought(list<Node*> t_graph) {
+
+//}

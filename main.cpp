@@ -46,6 +46,24 @@
 **
 ** $QT_END_LICENSE$
 **
+**
+**
+**
+** Le 26.02.19 à Bossey par Rémi Fongaufier
+** Defintion :
+** Lors de l'écriture des commentaires les déifnitions suivantes arbitrairement
+** décidé sont respectés :
+**  - Un Node : Correponds à un élément, un noeud du graphe.
+**  - Une gamme : Corresponds à un graphe simple orienté et linéaire. Par linéaire
+** on entend qu'il ne possède qu'une tête et qu'une queue et qu'il n'a pas de
+** bijection. Ce graphe est composé de Node qui sont une structure comme définie
+** dans linkedlist.h
+** est composé d'élémént
+**  - Un graph/Graph : Correpond à un graphique orienté et fini. Ce graphique
+** représente l'association de plusieurs gammes entre-elles de la manière la
+** plus optimisé possible.
+**  - optimisation du graph : Correspond à trouver le graphe cohérent, composé
+** du moins d'élément possible.
 ****************************************************************************/
 
 #include <QApplication>
