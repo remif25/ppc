@@ -45,9 +45,9 @@ public:
     void initData(QFile *file);
     QString displayInitData();
     QString createGraph();
-    std::list<Node*> listedGamme(Node* t_nodeHead);
-    Node* getLast(Node* t_node); //Uniquement pour les gammes
-    Node* copieWithoutNext(Node* t_node);
+    std::list<Node*> listedGamme(Node* t_nodeHead); //Uniquement pour les gammes
+    Node** getLast(Node** t_node); //Uniquement pour les gammes
+    Node* copieWithoutNext(Node* t_nodeGamme, int tempWeight);
 
     /*
      *
@@ -57,7 +57,7 @@ public:
      *
      *
      * */
-
+    void buildGraph(Node* t_node);
     int algo_rec(Node* t_nodeGamme, Node* t_nodeGraph, int t_path, int t_check, bool t_test);
     static bool deleteAll( Node * theElement ) { delete theElement; return true; }
     void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);
@@ -66,6 +66,7 @@ private:
     std::vector<Node*> m_NodesHeads;
     std::vector<int> m_sizeGammes;
     std::list<Node*> m_optimizedGraphHead;
+    std::list<Node*>::iterator it_Optimizedgraph;
     std::list<Node*> m_optimizedGraphHeadbyGamme;
     int m_nbElements;
     int m_nbGammes;
@@ -73,6 +74,7 @@ private:
     std::list<Node*> m_bestPath;
     std::vector<QString> m_listNodeValue;
     std::vector<QString> m_listGammes;
+    std::list<Node*> m_tempGamme;
 
     int nbElements() const { return m_nbElements; }
     void nbElements(int nb_element) {m_nbElements = std::move(nb_element);}
