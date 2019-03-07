@@ -22,11 +22,14 @@
 #include <QTextStream>
 #include <QFile>
 #include <string>
+#include <array>
+#include <map>
 
 struct Node {
     std::list<Node*> next;
     QString value;
     QString gamme;
+    int increment;
     double weight;
     std::vector<int> branchs;
     std::vector<QString> gammes;
@@ -46,8 +49,9 @@ public:
     QString displayInitData();
     QString createGraph();
     std::list<Node*> listedGamme(Node* t_nodeHead); //Uniquement pour les gammes
-    Node** getLast(Node** t_node); //Uniquement pour les gammes
-    Node* copieWithoutNext(Node* t_nodeGamme, int tempWeight);
+    Node* getLast(Node* t_node); //Uniquement pour les gammes
+    Node* copieWithoutNext(Node* t_nodeGamme);
+    Node* copieWithoutNextAndIncrement(Node* t_nodeGamme);
 
     /*
      *
@@ -57,9 +61,12 @@ public:
      *
      *
      * */
-    void buildGraph(Node* t_node);
-    int algo_rec(Node* t_nodeGamme, Node* t_nodeGraph, int t_path, int t_check, bool t_test);
+    int buildGraph(Node* t_previousNode, Node* t_node);
+    void buildGraph2(Node* t_node);
+    Node* getNodeByValue(QString t_value, Node* t_node); // cherche à partir du noeud indiqué dans le graphOptimized et renvoie le noeud avec la même valeur
+    int algo_rec(Node* t_nodeGamme, std::list<Node*> t_listPreviousNextNode, std::list<Node*> t_listNextNode, int t_occurence, int t_check, int t_try);
     static bool deleteAll( Node * theElement ) { delete theElement; return true; }
+    int addgamme(Node* t_gamme, Node* t_previousNode, std::list<Node*> t_graph, float t_tempWeight);
     void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);
 
 private:
@@ -68,13 +75,18 @@ private:
     std::list<Node*> m_optimizedGraphHead;
     std::list<Node*>::iterator it_Optimizedgraph;
     std::list<Node*> m_optimizedGraphHeadbyGamme;
-    int m_nbElements;
-    int m_nbGammes;
-    float m_defaultWeight;
+    int m_nbElements = 0;
+    int m_nbGammes = 0;
+    float m_defaultWeight = 0;
     std::list<Node*> m_bestPath;
     std::vector<QString> m_listNodeValue;
+    std::vector<QString> m_listNodeValueOptimizedGraph;
+    std::vector<int> m_listNodeIncrementOptimizedGraph;
     std::vector<QString> m_listGammes;
+    std::list<Node*> m_listTempGamme;
     std::list<Node*> m_tempGamme;
+    std::list<int> m_occurence;
+    std::map<QString, int> m_listProcess;
 
     int nbElements() const { return m_nbElements; }
     void nbElements(int nb_element) {m_nbElements = std::move(nb_element);}

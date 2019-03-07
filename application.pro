@@ -7,7 +7,8 @@ HEADERS       = mainwindow.h \
 SOURCES       = main.cpp \
                 mainwindow.cpp \
     linkedlist.cpp \
-    node.cpp
+    node.cpp \
+    asupprimer.cpp
 #! [0]
 RESOURCES     = application.qrc
 #! [0]
