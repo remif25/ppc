@@ -50,8 +50,9 @@ public:
     QString createGraph();
     std::list<Node*> listedGamme(Node* t_nodeHead); //Uniquement pour les gammes
     Node* getLast(Node* t_node); //Uniquement pour les gammes
-    Node* copieWithoutNext(Node* t_nodeGamme);
-    Node* copieWithoutNextAndIncrement(Node* t_nodeGamme);
+    Node* copieWithoutNext(Node* t_nodeGamme); //Copie le noeud sans le next
+    Node* copieWithoutNextAndIncrement(Node* t_nodeGamme); // Copie le noeud sans le next + increment le noed + ajoute la valeur à m_listProcess
+    Node* copieWithoutNextAddIncrement(Node *t_node); // Copie le noeud sans le next + increment le noed
 
     /*
      *
@@ -64,7 +65,7 @@ public:
     int buildGraph(Node* t_previousNode, Node* t_node);
     void buildGraph2(Node* t_node);
     Node* getNodeByValue(QString t_value, Node* t_node); // cherche à partir du noeud indiqué dans le graphOptimized et renvoie le noeud avec la même valeur
-    int algo_rec(Node* t_nodeGamme, std::list<Node*> t_listPreviousNextNode, std::list<Node*> t_listNextNode, int t_occurence, int t_check, int t_try);
+    int algo_rec(Node* t_nodeGamme, std::list<Node*> t_listPreviousNextNode, std::list<Node*> t_listNextNode, unsigned int t_occurence, int t_check, unsigned int t_try);
     static bool deleteAll( Node * theElement ) { delete theElement; return true; }
     int addgamme(Node* t_gamme, Node* t_previousNode, std::list<Node*> t_graph, float t_tempWeight);
     void incrementPath(std::list<Node*>::iterator *it_OptimizedGraph , std::list<Node*>::iterator* t_it_tempPath, double t_weight);

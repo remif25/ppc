@@ -135,7 +135,10 @@ QString LinkedList::displayInitData() {
 
 QString LinkedList::createGraph() {
     std::list<int>::iterator mostOccurence;
+    Node TempGamme;
+    Node TempGamme2;
     int i;
+    int j = 0;
     int numberOfGammeToIncrement;
     float tempWeight;
 
@@ -156,30 +159,53 @@ QString LinkedList::createGraph() {
             }
 
 
-            tempWeight = m_defaultWeight / static_cast< float >(numberOfGammeToIncrement);
+            tempWeight = 1/ (m_defaultWeight * static_cast< float >(numberOfGammeToIncrement) * static_cast< float >(m_sizeGammes[j]));
             i = 0;
             for (std::list<int>::iterator it=m_occurence.begin(); it != m_occurence.end(); ++it) {
-                if (it == mostOccurence)  {
+                if ((*it) == (*mostOccurence))  {
                     std::list<Node*>::iterator it_gamme = m_listTempGamme.begin();
                     std::advance(it_gamme, i);
 
-                    addgamme(*it_gamme, new Node(), m_optimizedGraphHead, tempWeight);
+                    if(TempGamme.value == "") {
+                        addgamme(*it_gamme, new Node(), m_optimizedGraphHead, tempWeight);
+                        TempGamme = *copieWithoutNext(gamme);
+                    }
+                    else {
+                        TempGamme2 = TempGamme;
 
+                        /*
+                         *
+                         *
+                         * Lors de la copie de TempGamme dans TempGamme2 le premier Node contenu dans TempGamme va
+                         * bien créer un nouveau Node avec les mêmes attributs mais considéré comme un Node différent.
+                         * Par contre si TempGamme à des nexts, TempGamme2 aura les mêmes nexts copiés.
+                         * Donc si l'on rajoute ensuite des nexts au next de TempGamme2, ceux-ci vont aussi être ajouté pour
+                         * TempGamme. Il font don ccréer un fonction de copy pour chaque next de TempGamme, créer une copie.
+                         *
+                         *
+                         *
+                         *
+                         *
+                         *
+                         * */
+                        getLast(&TempGamme2)->next.push_back((*it_gamme));
+                        addgamme(&TempGamme2, new Node(), m_optimizedGraphHead, tempWeight);
+                        getLast(&TempGamme)->next.push_back(copieWithoutNext(gamme));
+
+                    }
 
                 }
                 i++;
             }
 
-            /*
-             * A faire dans une fonction à part
-             * incrementer dans OptimizedGrpah les chemins avec le plus d'occurences
-             * Réinitialiser m_listTempGamme en ajoutant les premiers éléments de la gamme
-             * Réinitialiser m_occurrence
-             *
-             *
-             *
-             * */
+
+            m_listTempGamme.clear();
+            m_occurence.clear();
+
+
+            gamme = gamme->next.back();
         }
+        j++;
     }
     return "ok";
 }
@@ -190,11 +216,16 @@ int LinkedList::addgamme(Node* t_gamme, Node* t_previousNode, std::list<Node*> t
     t_gamme->weight = static_cast<double>(t_tempWeight);
 
     while (t_gamme->value != "") {
-        if (m_listProcess[t_gamme->value] >= t_gamme->increment){ //On Vérifie si le Proces existe déjà (Valeur + incrément)
+        if (m_listProcess.find(t_gamme->value) != m_listProcess.end() && m_listProcess.at(t_gamme->value) >= t_gamme->increment){ //On Vérifie si le Proces existe déjà (Valeur + incrément)
             for (auto node : t_graph) {
                 if (node->value == t_gamme->value && node->increment == t_gamme->increment) {
                     node->weight += static_cast<double>(t_tempWeight);
                     previousNode = node;
+                    if (!t_gamme->next.empty())
+                        return addgamme(t_gamme->next.back(), node, node->next, t_tempWeight);
+                    else {
+                        return 1;
+                    }
                 } else {
                     if (!node->next.empty())
                         return LinkedList::addgamme(t_gamme, node, node->next, t_tempWeight);
@@ -205,64 +236,59 @@ int LinkedList::addgamme(Node* t_gamme, Node* t_previousNode, std::list<Node*> t
             }
         } else {
             if (t_previousNode->value == "") {
-                m_optimizedGraphHead.push_back(copieWithoutNext(t_gamme));
+                m_optimizedGraphHead.push_back(copieWithoutNextAndIncrement(t_gamme));
                 previousNode = m_optimizedGraphHead.back();
 
             } else {
-                t_previousNode->next.push_back(copieWithoutNext(t_gamme));
+                t_previousNode->next.push_back(copieWithoutNextAndIncrement(t_gamme));
                 previousNode = t_previousNode->next.back();
-                t_previousNode->next.back()->weight += static_cast<double>(t_tempWeight);
-            }
-
-            if ( m_listProcess.find(t_gamme->value) == m_listProcess.end() ) {
-                m_listProcess.insert(std::pair<QString, int>(t_gamme->value, t_gamme->increment));
-            } else {
-                m_listProcess[t_gamme->value]++;
             }
         }
-        return addgamme(t_gamme->next.back(), previousNode, m_optimizedGraphHead, t_tempWeight);
+        if (!t_gamme->next.empty())
+            return addgamme(t_gamme->next.back(), previousNode, m_optimizedGraphHead, t_tempWeight);
+        else
+            return 1;
     }
 
     return 1;
 }
 
 
-int LinkedList::algo_rec(Node *t_nodeGamme, std::list<Node *> t_listPreviousNextNode, std::list<Node *> t_listNextNode, int t_occurence, int t_check, int t_try)
+int LinkedList::algo_rec(Node *t_nodeGamme, std::list<Node *> t_listPreviousNextNode, std::list<Node *> t_listNextNode, unsigned int t_occurence, int t_check, unsigned int t_try)
 {
     bool checkExist;
 
-    while (!t_nodeGamme->next.empty()) {
+    while (!t_nodeGamme->next.empty()) { // Vérifie si l'élément de la gamme à une suite
         checkExist = false;
 
-        for (auto nextNode : t_listNextNode)
+        for (auto nextNode : t_listNextNode) // Pour tous les éléments suivants de l'élément en cours du Graph
         {
-            if (nextNode->value == t_nodeGamme->value) {
-                if (t_try  == 0) {
-
-                    m_listTempGamme.push_back(copieWithoutNext(nextNode));
+            if (nextNode->value == t_nodeGamme->value) { //Si le graph et la gamme correspondent
+                if (!m_occurence.size() > t_try) { // t_try correspond au nombre de chemin rencontre
+                    m_listTempGamme.push_back(copieWithoutNext(nextNode)); // On ajout à la Tempgamme l'élement de la gamme sans suite pour le moment
                     m_occurence.push_back(t_occurence +1);
                 } else {
                     std::list<Node*>::iterator it_nextNode = std::next(m_listTempGamme.begin(), t_try);
                     getLast(*it_nextNode)->next.push_back(copieWithoutNext(nextNode));
                     std::list<int>::iterator it_occurrence = std::next(m_occurence.begin() , t_try);
-                    *it_occurrence = *it_occurrence++;
+                    (*it_occurrence)++;
                     t_occurence = *it_occurrence;
                 }
 
-                return algo_rec(t_nodeGamme->next.back(), nextNode->next, nextNode->next, t_occurence, true, t_try);
+                return algo_rec(t_nodeGamme->next.back(), nextNode->next, nextNode->next, t_occurence, true, t_try); // On renvoie le prochain élément de la gamme, et les prochains éléments.
 
-            } else if (! nextNode->next.empty() && nextNode->value != t_nodeGamme->value) {
+            } else if (!nextNode->next.empty() && nextNode->value != t_nodeGamme->value) {
                 return algo_rec(t_nodeGamme, t_listPreviousNextNode, nextNode->next, t_occurence, t_check, t_try);
             } else {
                 if (t_check) {
-                    if (m_occurence.size() >= t_try) {
-                        m_listTempGamme.push_back(copieWithoutNext(nextNode));
-                        m_occurence.push_back(t_occurence++);
+                    if (m_occurence.size() > t_try) {
+                        std::list<Node*>::iterator it_nextNode = std::next(m_listTempGamme.begin(), t_try);
+                        getLast(*it_nextNode)->next.push_back(copieWithoutNextAddIncrement(t_nodeGamme));
                     } else {
                         std::list<Node*>::iterator it_nextNode = std::next(m_listTempGamme.begin(), t_try);
                         getLast(*it_nextNode)->next.push_back(copieWithoutNext(nextNode));
                         std::list<int>::iterator it_occurrence = std::next(m_occurence.begin() , t_try);
-                        *it_occurrence = (*it_occurrence)++;
+                        (*it_occurrence)++;
                         t_occurence = *it_occurrence;
                     }
 
@@ -285,6 +311,7 @@ int LinkedList::algo_rec(Node *t_nodeGamme, std::list<Node *> t_listPreviousNext
             return algo_rec(t_nodeGamme->next.back(), t_listPreviousNextNode, t_listPreviousNextNode, t_occurence, t_check, t_try);
         }
     }
+    return 1;
 }
 
 void LinkedList::add_elements(int t_nbElements)
@@ -322,12 +349,28 @@ Node* LinkedList::copieWithoutNextAndIncrement(Node *t_node) {
     node->weight = t_node->weight;
     node->branchs = t_node->branchs;
 
-    if ( m_listProcess.find(node->value) == m_listProcess.end() ) {
+    if (m_listProcess.find(node->value) == m_listProcess.end() ) {
         m_listProcess.insert(std::pair<QString, int>(node->value, 1));
         node->increment = 1;
     } else {
         m_listProcess[node->value] = m_listProcess[node->value] + 1;
         node->increment = m_listProcess[node->value];
+    }
+
+    return node;
+}
+
+Node* LinkedList::copieWithoutNextAddIncrement(Node *t_node) {
+    Node* node = new Node();
+    node->gamme = t_node->gamme;
+    node->value = t_node->value;
+    node->weight = t_node->weight;
+    node->branchs = t_node->branchs;
+
+    if ( m_listProcess.find(node->value) == m_listProcess.end() ) {
+        node->increment = 1;
+    } else {
+        node->increment = m_listProcess[node->value] + 1;
     }
 
     return node;
